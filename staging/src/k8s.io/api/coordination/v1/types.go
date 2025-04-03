@@ -30,6 +30,8 @@ const (
 	// 3) If multiple candidates have the same binary version, select the candidate with the oldest creationTimestamp.
 	// If a candidate does not specify the emulationVersion and binaryVersion fields, it will not be considered a candidate for the lease.
 	OldestEmulationVersion CoordinatedLeaseStrategy = "OldestEmulationVersion"
+
+	PickMe CoordinatedLeaseStrategy = "PickMe"
 )
 
 // +genclient

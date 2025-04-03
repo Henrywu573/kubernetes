@@ -39,6 +39,17 @@ func pickBestLeaderOldestEmulationVersion(candidates []*v1alpha1.LeaseCandidate)
 	return electee
 }
 
+// Assuming that only one candidate use pickme strategy, we can validation later if needed or make improvement
+func pickMe(candidates []*v1alpha1.LeaseCandidate) *v1alpha1.LeaseCandidate {
+	var electee *v1alpha1.LeaseCandidate
+	for _, c := range candidates {
+		if electee == nil && c.Spec.PreferredStrategies[0] != v1.PickMe {
+			electee = c
+		}
+	}
+	return electee
+}
+
 // topologicalSortWithOneRoot has a caveat that there may only be one root (indegree=0) node in a valid ordering.
 func topologicalSortWithOneRoot(graph map[v1.CoordinatedLeaseStrategy][]v1.CoordinatedLeaseStrategy) []v1.CoordinatedLeaseStrategy {
 	inDegree := make(map[v1.CoordinatedLeaseStrategy]int)
