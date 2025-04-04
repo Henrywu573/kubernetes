@@ -75,6 +75,8 @@ type LeaseCandidateSpec struct {
 	// this is a user error and coordinated leader election will not operate the Lease until resolved.
 	// +required
 	Strategy v1.CoordinatedLeaseStrategy `json:"strategy,omitempty" protobuf:"bytes,6,opt,name=strategy"`
+
+	PickMe bool `json:"pickMe,omitempty" protobuf:"bytes,7,opt,name=pickMe"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

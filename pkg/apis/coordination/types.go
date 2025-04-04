@@ -143,6 +143,7 @@ type LeaseCandidateSpec struct {
 	// +listType=atomic
 	// +required
 	Strategy CoordinatedLeaseStrategy
+	PickMe   bool
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
