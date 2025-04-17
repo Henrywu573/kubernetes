@@ -32,6 +32,7 @@ type LeaseCandidateSpecApplyConfiguration struct {
 	BinaryVersion    *string                                  `json:"binaryVersion,omitempty"`
 	EmulationVersion *string                                  `json:"emulationVersion,omitempty"`
 	Strategy         *coordinationv1.CoordinatedLeaseStrategy `json:"strategy,omitempty"`
+	PickMe           *bool                                    `json:"pickMe,omitempty"`
 }
 
 // LeaseCandidateSpecApplyConfiguration constructs a declarative configuration of the LeaseCandidateSpec type for use with
@@ -85,5 +86,13 @@ func (b *LeaseCandidateSpecApplyConfiguration) WithEmulationVersion(value string
 // If called multiple times, the Strategy field is set to the value of the last call.
 func (b *LeaseCandidateSpecApplyConfiguration) WithStrategy(value coordinationv1.CoordinatedLeaseStrategy) *LeaseCandidateSpecApplyConfiguration {
 	b.Strategy = &value
+	return b
+}
+
+// WithPickMe sets the PickMe field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PickMe field is set to the value of the last call.
+func (b *LeaseCandidateSpecApplyConfiguration) WithPickMe(value bool) *LeaseCandidateSpecApplyConfiguration {
+	b.PickMe = &value
 	return b
 }

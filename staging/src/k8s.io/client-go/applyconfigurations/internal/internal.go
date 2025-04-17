@@ -4547,6 +4547,9 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         scalar: string
       default: ""
+    - name: pickMe
+      type:
+        scalar: boolean
     - name: pingTime
       type:
         namedType: io.k8s.apimachinery.pkg.apis.meta.v1.MicroTime
@@ -4604,6 +4607,9 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         scalar: string
       default: ""
+    - name: pickMe
+      type:
+        scalar: boolean
     - name: pingTime
       type:
         namedType: io.k8s.apimachinery.pkg.apis.meta.v1.MicroTime

@@ -94,5 +94,7 @@ message LeaseCandidateSpec {
   // this is a user error and coordinated leader election will not operate the Lease until resolved.
   // +required
   optional string strategy = 6;
+
+  optional bool pickMe = 7;
 }
 

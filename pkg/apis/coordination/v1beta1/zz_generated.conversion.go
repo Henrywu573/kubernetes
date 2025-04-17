@@ -183,6 +183,7 @@ func autoConvert_v1beta1_LeaseCandidateSpec_To_coordination_LeaseCandidateSpec(i
 	out.BinaryVersion = in.BinaryVersion
 	out.EmulationVersion = in.EmulationVersion
 	out.Strategy = coordination.CoordinatedLeaseStrategy(in.Strategy)
+	out.PickMe = in.PickMe
 	return nil
 }
 
@@ -198,6 +199,7 @@ func autoConvert_coordination_LeaseCandidateSpec_To_v1beta1_LeaseCandidateSpec(i
 	out.BinaryVersion = in.BinaryVersion
 	out.EmulationVersion = in.EmulationVersion
 	out.Strategy = coordinationv1.CoordinatedLeaseStrategy(in.Strategy)
+	out.PickMe = in.PickMe
 	return nil
 }
 
