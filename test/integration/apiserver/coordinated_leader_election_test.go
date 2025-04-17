@@ -128,7 +128,7 @@ func TestMultipleLeaseCandidate(t *testing.T) {
 			// Because the OldestEmulationVersion strategy is used here, the
 			// the coordinated leader election controller will pick the candidate
 			// with OldestEmulationVersion and OldestBinaryVersion.
-			expectedHolderIdentity: ptr.To("baz3"),
+			expectedHolderIdentity: ptr.To("baz1"),
 		},
 	}
 	featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, genericfeatures.CoordinatedLeaderElection, true)
@@ -148,7 +148,7 @@ func TestMultipleLeaseCandidate(t *testing.T) {
 
 			cletest := setupCLE(config, ctx, t)
 			defer cletest.cleanup()
-			go cletest.createAndRunFakeController("baz1", "default", "baz", "1.20.0", "1.20.0", tc.preferredStrategy)
+			go cletest.createAndRunFakeControllerWithPickMe("baz1", "default", "baz", "1.20.0", "1.20.0", tc.preferredStrategy, true)
 			go cletest.createAndRunFakeController("baz2", "default", "baz", "1.20.0", "1.19.0", tc.preferredStrategy)
 			go cletest.createAndRunFakeController("baz3", "default", "baz", "1.19.0", "1.19.0", tc.preferredStrategy)
 			go cletest.createAndRunFakeController("baz4", "default", "baz", "1.20.0", "1.19.0", tc.preferredStrategy)
@@ -344,6 +344,43 @@ func (t *cleTest) createAndRunFakeController(name string, namespace string, targ
 		binaryVersion,
 		compatibilityVersion,
 		preferredStrategy,
+	)
+	if err != nil {
+		t.t.Error(err)
+	}
+
+	ctx, cancel := context.WithCancel(t.ctx)
+	t.mu.Lock()
+	t.ctxList[name+"/"+namespace] = ctxCancelPair{ctx, cancel}
+	t.mu.Unlock()
+	go identityLease.Run(ctx)
+
+	electionChecker := leaderelection.NewLeaderHealthzAdaptor(time.Second * 20)
+	go leaderElectAndRunCoordinated(ctx, t.config, name, electionChecker,
+		namespace,
+		"leases",
+		targetLease,
+		leaderelection.LeaderCallbacks{
+			OnStartedLeading: func(ctx context.Context) {
+				klog.Info("Elected leader, starting..")
+			},
+			OnStoppedLeading: func() {
+				klog.Errorf("%s Lost leadership, stopping", name)
+				// klog.FlushAndExit(klog.ExitFlushTimeout, 1)
+			},
+		})
+}
+
+func (t *cleTest) createAndRunFakeControllerWithPickMe(name string, namespace string, targetLease string, binaryVersion string, compatibilityVersion string, preferredStrategy v1.CoordinatedLeaseStrategy, pickme bool) {
+	identityLease, _, err := leaderelection.NewCandidateWithPickMe(
+		t.clientset,
+		namespace,
+		name,
+		targetLease,
+		binaryVersion,
+		compatibilityVersion,
+		preferredStrategy,
+		pickme,
 	)
 	if err != nil {
 		t.t.Error(err)

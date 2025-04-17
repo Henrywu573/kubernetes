@@ -61,6 +61,7 @@ type LeaseCandidate struct {
 
 	binaryVersion, emulationVersion string
 	strategy                        v1.CoordinatedLeaseStrategy
+	pickme                          bool
 }
 
 // NewCandidate creates new LeaseCandidate controller that creates a
@@ -97,6 +98,57 @@ func NewCandidate(clientset kubernetes.Interface,
 		binaryVersion:          binaryVersion,
 		emulationVersion:       emulationVersion,
 		strategy:               strategy,
+	}
+	lc.queue = workqueue.NewTypedRateLimitingQueueWithConfig(workqueue.DefaultTypedControllerRateLimiter[int](), workqueue.TypedRateLimitingQueueConfig[int]{Name: "leasecandidate"})
+
+	h, err := leaseCandidateInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			if leasecandidate, ok := newObj.(*v1beta1.LeaseCandidate); ok {
+				if leasecandidate.Spec.PingTime != nil && leasecandidate.Spec.PingTime.After(leasecandidate.Spec.RenewTime.Time) {
+					lc.enqueueLease()
+				}
+			}
+		},
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	lc.hasSynced = h.HasSynced
+
+	return lc, informerFactory, nil
+}
+
+func NewCandidateWithPickMe(clientset kubernetes.Interface,
+	candidateNamespace string,
+	candidateName string,
+	targetLease string,
+	binaryVersion, emulationVersion string,
+	strategy v1.CoordinatedLeaseStrategy,
+	pickMe bool,
+) (*LeaseCandidate, CacheSyncWaiter, error) {
+	fieldSelector := fields.OneTermEqualSelector("metadata.name", candidateName).String()
+	// A separate informer factory is required because this must start before informerFactories
+	// are started for leader elected components
+	informerFactory := informers.NewSharedInformerFactoryWithOptions(
+		clientset, 5*time.Minute,
+		informers.WithTweakListOptions(func(options *metav1.ListOptions) {
+			options.FieldSelector = fieldSelector
+		}),
+	)
+	leaseCandidateInformer := informerFactory.Coordination().V1beta1().LeaseCandidates().Informer()
+
+	lc := &LeaseCandidate{
+		leaseClient:            clientset.CoordinationV1beta1().LeaseCandidates(candidateNamespace),
+		leaseCandidateInformer: leaseCandidateInformer,
+		informerFactory:        informerFactory,
+		name:                   candidateName,
+		namespace:              candidateNamespace,
+		leaseName:              targetLease,
+		clock:                  clock.RealClock{},
+		binaryVersion:          binaryVersion,
+		emulationVersion:       emulationVersion,
+		strategy:               strategy,
+		pickme:                 pickMe,
 	}
 	lc.queue = workqueue.NewTypedRateLimitingQueueWithConfig(workqueue.DefaultTypedControllerRateLimiter[int](), workqueue.TypedRateLimitingQueueConfig[int]{Name: "leasecandidate"})
 
@@ -195,6 +247,7 @@ func (c *LeaseCandidate) newLeaseCandidate() *v1beta1.LeaseCandidate {
 			BinaryVersion:    c.binaryVersion,
 			EmulationVersion: c.emulationVersion,
 			Strategy:         c.strategy,
+			PickMe:           c.pickme,
 		},
 	}
 	lc.Spec.RenewTime = &metav1.MicroTime{Time: c.clock.Now()}
