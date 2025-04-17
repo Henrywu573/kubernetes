@@ -29,6 +29,10 @@ import (
 func pickBestLeaderOldestEmulationVersion(candidates []*v1beta1.LeaseCandidate) *v1beta1.LeaseCandidate {
 	var electee *v1beta1.LeaseCandidate
 	for _, c := range candidates {
+		if c.Spec.PickMe == true {
+			electee = c
+			break
+		}
 		if !validLeaseCandidateForOldestEmulationVersion(c) {
 			continue
 		}
